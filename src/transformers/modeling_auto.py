@@ -86,6 +86,7 @@ from .modeling_distilbert import (
 from .modeling_electra import (
     ELECTRA_PRETRAINED_MODEL_ARCHIVE_MAP,
     ElectraForMaskedLM,
+    ElectraForMultipleChoice,
     ElectraForPreTraining,
     ElectraForTokenClassification,
     ElectraModel,
@@ -280,6 +281,7 @@ MODEL_FOR_MULTIPLE_CHOICE_MAPPING = OrderedDict(
         (CamembertConfig, CamembertForMultipleChoice),
         (XLMRobertaConfig, XLMRobertaForMultipleChoice),
         (RobertaConfig, RobertaForMultipleChoice),
+        (ElectraConfig, ElectraForMultipleChoice),
         (BertConfig, BertForMultipleChoice),
         (XLNetConfig, XLNetForMultipleChoice),
     ]
