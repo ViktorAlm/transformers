@@ -9,7 +9,7 @@ from .activations import get_activation
 from .configuration_electra import ElectraConfig
 from .file_utils import add_start_docstrings, add_start_docstrings_to_callable
 from .modeling_bert import BertEmbeddings, BertEncoder, BertLayerNorm, BertPreTrainedModel
-
+from .modeling_utils import SequenceSummary
 
 logger = logging.getLogger(__name__)
 
@@ -523,10 +523,16 @@ class ElectraForMultipleChoice(ElectraPreTrainedModel):
         super().__init__(config)
 
         self.electra = ElectraModel(config)
+
+        #Use the sequencesummary to keep some consistency of the code between models
+        #Electra seems to be using gelu as activation, I have not done extensive testing but it seems to prude very similar results to tanh
+        config.summary_type = 'first'
+        config.summary_activation = 'gelu'
+        self.pooler = SequenceSummary(config)
+
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
         self.classifier = nn.Linear(config.hidden_size, 1)
-        self.dense = nn.Linear(config.hidden_size, config.hidden_size)
-        self.activation = nn.Tanh()
+
         self.init_weights()
 
     @add_start_docstrings_to_callable(ELECTRA_INPUTS_DOCSTRING)
@@ -589,21 +595,14 @@ class ElectraForMultipleChoice(ElectraPreTrainedModel):
         token_type_ids = token_type_ids.view(-1, token_type_ids.size(-1)) if token_type_ids is not None else None
         position_ids = position_ids.view(-1, position_ids.size(-1)) if position_ids is not None else None
 
-        outputs = self.electra(input_ids, attention_mask, token_type_ids, position_ids, head_mask, inputs_embeds)
+        discriminator_outputs = self.electra(input_ids, attention_mask, token_type_ids, position_ids, head_mask, inputs_embeds)
 
-        first_token_tensor = outputs[0][:, 0]
-
-        pooled_output = self.dense(first_token_tensor)
-        pooled_output = self.activation(pooled_output)
-
-        if labels is not None:
-            pooled_output = self.dropout(pooled_output)
-
+        output = discriminator_outputs[0]
+        pooled_output = self.pooler(output)
         logits = self.classifier(pooled_output)
-
         reshaped_logits = logits.view(-1, num_choices)
 
-        outputs = (reshaped_logits,) + outputs[2:]  # add hidden states and attention if they are here
+        outputs = (reshaped_logits,) + discriminator_outputs[2:]  # add hidden states and attention if they are here
 
         if labels is not None:
             loss_fct = CrossEntropyLoss()

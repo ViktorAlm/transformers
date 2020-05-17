@@ -527,12 +527,12 @@ def convert_examples_to_features(
             logger.info("Writing example %d of %d" % (ex_index, len(examples)))
         choices_inputs = []
         for ending_idx, (context, ending) in enumerate(zip(example.contexts, example.endings)):
-            text_a = context
+            text_a = context.lower()
             if example.question.find("_") != -1:
                 # this is for cloze question
-                text_b = example.question.replace("_", ending)
+                text_b = example.question.replace("  _  .", "?").lower() + " " + ending.lower()
             else:
-                text_b = example.question + " " + ending
+                text_b = example.question.replace("  _  .", "?").lower() + " " + ending.lower()
 
             inputs = tokenizer.encode_plus(
                 text_a,
