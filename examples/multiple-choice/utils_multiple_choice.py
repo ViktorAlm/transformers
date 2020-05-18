@@ -530,17 +530,18 @@ def convert_examples_to_features(
             text_a = context.lower()
             if example.question.find("_") != -1:
                 # this is for cloze question
-                text_b = example.question.replace("  _  .", "?").lower() + " " + ending.lower()
+                text_b = example.question.replace("  _  .", "?").replace(" _ .", "?").replace(" _.", "?").lower() + " " + ending.lower()
             else:
-                text_b = example.question.replace("  _  .", "?").lower() + " " + ending.lower()
+                text_b = example.question.replace("  _  .", "?").replace(" _ .", "?").replace(" _.", "?").lower() + " " + ending.lower()
 
             inputs = tokenizer.encode_plus(
                 text_a,
                 text_b,
                 add_special_tokens=True,
+                truncation_stratehy="only_first",
                 max_length=max_length,
                 pad_to_max_length=True,
-                return_overflowing_tokens=True,
+                #return_overflowing_tokens=True,
             )
             if "num_truncated_tokens" in inputs and inputs["num_truncated_tokens"] > 0:
                 logger.info(
